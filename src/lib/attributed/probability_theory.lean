@@ -55,7 +55,7 @@ coe_to_nnreal (to_measure_ne_top s)
 (p : probability_measure α) s = ennreal.to_nnreal (p.to_measure s)
 := rfl
 
-@[extensionality] lemma prob.ext {α} [measurable_space α] :
+@[ext] lemma prob.ext {α} [measurable_space α] :
   ∀ {μ₁ μ₂ : probability_measure α}, (∀s, is_measurable s → μ₁ s = μ₂ s) → μ₁ = μ₂
 | ⟨m₁, u₁⟩ ⟨m₂, u₂⟩ H := begin
   congr, refine measure.ext (λ s hs, _),
@@ -133,8 +133,8 @@ begin
   rw h₁, 
   rw [prob_union p (disjoint_iff.2 h₃) g₁ h₂],
   rw [←prob_diff_inter p g₁ g₂],
-  simp,
-  rw [inter_comm],
+  rw add_assoc,
+  rw inter_comm _ a,
 end
 
 lemma prob_comp (a : set α) (h: is_measurable a) : p(-a) + p(a) = 1 :=
@@ -170,7 +170,7 @@ lemma integral_univ : integral p.to_measure (λ a, 1) = 1 := by simp
 -- somehow we need δ ≤ 1 o/w coercion hell. 
 lemma neq_prob_set {α : Type} [measurable_space α] (f : α → nnreal) (μ : probability_measure α) (ε δ : nnreal) (hd : δ ≤ 1) (hS : is_measurable ({x : α | f x > ε})) : μ({x : α | f x > ε}) ≤ δ ↔ μ ({x : α | f x ≤ ε}) ≥ 1 - δ :=
 begin
-  rw nnreal.coe_le,
+  rw ← nnreal.coe_le_coe,
   have h₀ : {x : α | f x > ε} = - {x : α | f x ≤ ε},by tidy, 
   have h₁ : - {x : α | f x > ε} = {x : α | f x ≤ ε}, by tidy,
   have h₃ : (μ ({x : α | f x > ε}) : ℝ) + μ{x : α | f x ≤ ε} = 1, {
@@ -183,7 +183,7 @@ begin
   },
   rw h₅, rw sub_le_iff_le_add',
   rw add_comm, rw ←sub_le_iff_le_add', rw ←nnreal.coe_one,
-  rw ←nnreal.coe_sub _ _ hd, rw ←nnreal.coe_le,
+  rw ←nnreal.coe_sub, rw nnreal.coe_le_coe, exact hd,
 end
 
 
@@ -372,7 +372,7 @@ begin
   rw prob.measurable_coe_iff_measurable_to_measure,
   apply measurable_of_measurable_coe, intros s hs,
   conv{congr,funext,rw function.comp_apply, rw _root_.dirac,},
-  simp [hs,mem_prod_eq,lattice.supr_eq_if],
+  simp [hs,mem_prod_eq,supr_eq_if],
   apply measurable_const.if _ measurable_const,
   apply measurable.preimage _ hs,  
   apply measurable.prod, dsimp, exact measurable_id, 
@@ -383,7 +383,7 @@ lemma prob_inr_measurable_dirac [measurable_space β][measurable_space α] : ∀
   rw prob.measurable_coe_iff_measurable_to_measure,
   apply measurable_of_measurable_coe, intros s hs,
   conv{congr,funext,rw function.comp_apply, rw _root_.dirac,},
-  simp [hs,mem_prod_eq,lattice.supr_eq_if],
+  simp [hs,mem_prod_eq,supr_eq_if],
   apply measurable_const.if _ measurable_const,
   apply measurable.preimage _ hs,  
   apply measurable.prod, dsimp,  exact measurable_const, 
@@ -404,7 +404,7 @@ begin
   by_cases Ha: (a ∈ A); by_cases Hb: (b ∈ B), 
   repeat {simp [Ha, Hb]},
   repeat {assumption}, 
-  exact is_measurable_set_prod hA hB, 
+  exact is_measurable.prod hA hB, 
 end
 
 @[simp] lemma prob.dirac_apply' {A : set α} {B : set β} (hA : is_measurable A) (hB : is_measurable B) (a : α) (b : β) :
@@ -419,7 +419,7 @@ unfold_coes, simp,
   by_cases Ha: (a ∈ A); by_cases Hb: (b ∈ B), 
   repeat {simp [Ha, Hb]},
   repeat {assumption}, 
-  exact is_measurable_set_prod hA hB, 
+  exact is_measurable.prod hA hB, 
 end
 
 end giry_monad
@@ -442,7 +442,7 @@ begin
   rw [nnreal.div_def,mul_assoc],
   have g₁ : (1 : ennreal) < ⊤,
   {
-    rw lattice.lt_top_iff_ne_top,
+    rw lt_top_iff_ne_top,
     apply ennreal.one_ne_top,
   },
   have g₂ : ∀ a, (p(a) ≠ 0) → (p(a))⁻¹ * p(a) = 1,
@@ -463,7 +463,7 @@ begin
   rw [nnreal.div_def,mul_assoc],
   have g₁ : (1 : ennreal) < ⊤,
   {
-    rw lattice.lt_top_iff_ne_top,
+    rw lt_top_iff_ne_top,
     apply ennreal.one_ne_top,
   },
   have g₂ : ∀ a, (p(a) ≠ 0) → (p(a))⁻¹ * p(a) = 1,

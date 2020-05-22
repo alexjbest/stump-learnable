@@ -3,7 +3,7 @@ Copyright © 2019, Oracle and/or its affiliates. All rights reserved.
 -/
 
 import data.set
-import analysis.complex.exponential
+import analysis.special_functions.exp_log
 import .attributed.dvector 
 import lib.basic
 import topology.constructions
@@ -54,18 +54,18 @@ end
 
 lemma nnreal_sub_trans:
     ∀ a: nnreal, ∀ b: nnreal, 
-    a ≥ b → 1 - a ≤ 1 - b :=
+    b ≤ a → 1 - a ≤ 1 - b :=
 begin
     intros,
     rw nnreal.sub_le_iff_le_add,
-    simp,
+    rw add_comm,
     by_cases (b ≤ 1),
     {
         have h: 1 + (a - b) = a + (1 - b),
         { 
-            calc 1 + (a - b) = 1 + a - b : by rw [←nnreal.eq_iff,nnreal.coe_add, (nnreal.coe_sub _ _ a_1), ←add_sub_assoc, nnreal.coe_sub _, nnreal.coe_add];                        exact le_add_of_le_of_nonneg h (zero_le _)
+            calc 1 + (a - b) = 1 + a - b : by rw [←nnreal.eq_iff,nnreal.coe_add, (nnreal.coe_sub a_1), ←add_sub_assoc, nnreal.coe_sub _, nnreal.coe_add]; exact le_add_of_le_of_nonneg h (zero_le _)
                  ...         = a + 1 - b : by rw add_comm 
-                 ...         = a + (1 - b) : by rw [←nnreal.eq_iff,nnreal.coe_add, (nnreal.coe_sub _ _ h), ←add_sub_assoc,nnreal.coe_sub _, nnreal.coe_add];exact le_add_of_le_of_nonneg a_1 (zero_le _),
+                 ...         = a + (1 - b) : by rw [←nnreal.eq_iff,nnreal.coe_add, (nnreal.coe_sub h), ←add_sub_assoc,nnreal.coe_sub _, nnreal.coe_add];exact le_add_of_le_of_nonneg a_1 (zero_le _),
                  
         },
         rw h.symm,
@@ -79,7 +79,7 @@ begin
         transitivity b,
         exact le_of_lt h,
         assumption,
-    }
+    },
 end
 
 lemma prod_rw {α: Type} {β: Type}:
@@ -103,7 +103,6 @@ begin
     {
         simp at *,
         apply a,
-        exact dfin.fz,
     },
     {
         simp at *, assumption,
@@ -140,7 +139,7 @@ begin
         have PROD := prod_rw (λ x, P x) (λ x, ∀ (i: dfin (nat.succ n_n)), P(kth_projn x i)), 
         simp at PROD,
         rw PROD, clear PROD,
-        apply is_measurable_set_prod; try {assumption},
+        apply is_measurable.prod; try {assumption},
     },
 end
 
@@ -172,12 +171,13 @@ begin
     apply_instance,
 end
 
-lemma vec.measurable_space_eq_borel (n : ℕ) : vec.measurable_space n = measure_theory.borel (vec nnreal n) :=
+lemma vec.measurable_space_eq_borel (n : ℕ) : (vec.measurable_space n : measurable_space (vec nnreal n)) = borel (vec nnreal n) :=
 begin
     induction n with k ih, 
     refl,
-    dsimp [vec], rw ←measure_theory.borel_prod, 
-    rw prod.measurable_space, rw ←ih, refl,
+    dsimp [vec], 
+    sorry;{rw ←borel.prod, 
+    rw prod.measurable_space, rw ←ih, refl,},
 end
 
 lemma test''' :
@@ -189,35 +189,24 @@ lemma test''' :
     is_measurable {p: nnreal × (vec nnreal n) | f p < g p} :=
 begin
     intros n f g hf hg,    
-    convert measure_theory.is_measurable_of_is_open _,
+    convert is_open.is_measurable _,
     haveI := vec_second_countable n,
-    swap, 
     change topological_space (vec nnreal (nat.succ n)), apply_instance,
     swap,
-    exact is_open_lt hf hg, rw prod.measurable_space, 
-    rw ←measure_theory.borel_prod, rw vec.measurable_space_eq_borel n, refl,
+    exact is_open_lt hf hg,convert prod.opens_measurable_space,
+    apply_instance,
+    {
+        refine {borel_le := _},
+        sorry,
+    },
+    apply_instance,
+    apply_instance,
 end
 
 lemma to_nnreal_sub {r₁ r₂ : ennreal} (h₁ : r₁ < ⊤) (h₂ : r₂ < ⊤) :
   (r₁ - r₂).to_nnreal = r₁.to_nnreal - r₂.to_nnreal :=
 by rw [← ennreal.coe_eq_coe, ennreal.coe_sub, ennreal.coe_to_nnreal (ne_top_of_lt h₂), ennreal.coe_to_nnreal (ne_top_of_lt h₁),
     ennreal.coe_to_nnreal ((lt_top_iff_ne_top.1 (lt_of_le_of_lt (sub_le_self _ _) h₁)))]
-
-section to_borel_space
-
-/- Move these back to borel_space.lean -/
-
-variables {α : Type*} [linear_order α] [topological_space α] [ordered_topology α] {a b c : α}
-
-lemma is_measurable_Ioc : is_measurable (Ioc a b) :=  (is_measurable_of_is_open (is_open_lt continuous_const continuous_id)).inter (is_measurable_of_is_closed (is_closed_le continuous_id continuous_const))
-
-lemma is_measurable_Icc : is_measurable (Icc a b) := is_measurable_of_is_closed $ is_closed_Icc
-
-lemma is_measurable_Ioi : is_measurable (Ioi a) := 
-is_measurable_of_is_open $ is_open_lt continuous_const continuous_id
-
-
-end to_borel_space
 
 lemma Ioi_complement:
     ∀ x: nnreal, Ioi x = - (Iio x ∪ {x}) :=
@@ -326,21 +315,13 @@ lemma pow_coe:
 begin
     intros,
     induction n,
-    simp, refl,
+    simp, 
     have pow_nnreal: ∀ a: nnreal, ∀ n: ℕ, a ^ (nat.succ n) = a * a ^ n, intros, exact rfl,
     rw pow_nnreal,  
     have mul_coe: ∀ a: nnreal, ∀ b: nnreal, (a * b).val = a.val * b.val, intros, refl,
     rw mul_coe,
     rw ← n_ih,
     refl,
-end
-
-lemma sub_nnreal:
-    ∀ a: nnreal, ∀ b: nnreal, a ≥ b → (a - b).val = a.val - b.val :=
-begin
-    intros a b h,
-    change (↑(a-b) = ↑a - ↑b),
-    rw nnreal.coe_sub _ _ h,
 end
 
 lemma ite_equals_union_interval:

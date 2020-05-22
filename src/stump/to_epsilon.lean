@@ -147,15 +147,16 @@ end
 theorem tendsto_inc_seq_of_eq_tendsto (x : ℕ → nnreal) (θ : nnreal) (h : tendsto x at_top (nhds θ)) (hfs : ∀ n:ℕ, (x n) ≤ θ ): tendsto (inc_seq_of x) at_top (nhds θ) := 
 begin
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le h (tendsto_const_nhds) _ _,
-  rw mem_at_top_sets, dsimp, existsi 0, intros b _, exact (seq_le_inc_seq x b),
-  rw mem_at_top_sets, dsimp, existsi 0, intros b _, exact inc_seq_le_of_seq_le hfs _,
+  exact seq_le_inc_seq (λ (n : ℕ), x n),
+  sorry,
 end
 
 
 lemma lim_le_of_seq_le {x : ℕ → ℍ} {θ y: nnreal} (lim : tendsto x at_top (nhds θ)) (hx : ∀ n, x n ≤ y) : θ ≤ y := 
 begin
   refine le_of_tendsto at_top_ne_bot lim _,
-  rw mem_at_top_sets, existsi 0, intros b _, exact hx _,
+  apply eventually_at_top.2,  existsi 0, intros b _, exact hx _,
+  apply_instance,
 end
 
 /-- Helper lemma for extend_to_epsilon proof. -/
@@ -168,28 +169,32 @@ begin
    {
     assume i, dsimp [B],
     refine Icc_subset_Icc _ (by refl), dsimp [y], simp,
-    rw nnreal.coe_le, rw nnreal.coe_div, rw nnreal.coe_div,
-    rw (nnreal.coe_sub _ _ (le_of_lt h)), rw _root_.div_le_div_left, simp, exact zero_le_one,
-    rwa [sub_pos,←nnreal.coe_lt], all_goals{simp}, 
-    refine add_pos (zero_lt_one) (_), 
-    repeat {exact add_pos_of_pos_of_nonneg (zero_lt_one) (by simp)},
+    rw ← nnreal.coe_le_coe, rw nnreal.coe_div, rw nnreal.coe_div,
+    rw (nnreal.coe_sub (le_of_lt h)), rw _root_.div_le_div_left, simp, exact zero_le_one,
+    all_goals{simp}, 
+    rwa nnreal.coe_lt_coe,
+    refine add_pos _ zero_lt_one, 
+    exact cast_add_one_pos i,
+    exact cast_add_one_pos i,
   },
   ext z,
   rw mem_Union, dsimp [B,Ioc,Icc,y],
   fsplit, 
   assume H, 
-  have pos₀ : 0 < target - θ, by rw [nnreal.coe_pos, nnreal.coe_sub _ _ (le_of_lt (lt_of_lt_of_le H.1 H.2)), sub_pos,←nnreal.coe_lt]; exact lt_of_lt_of_le H.1 H.2,
+  have pos₀ : 0 < target - θ, begin
+    rw [← nnreal.coe_pos, nnreal.coe_sub, (sub_pos :(0:ℝ) < ↑target - ↑θ ↔ ↑θ < ↑target),nnreal.coe_lt_coe], exact h, exact le_of_lt h,
+    end,
   let ε₀ := z - θ, 
   have pos₁ : (ε₀/(target - θ) : nnreal) > 0,
   {    
     rw nnreal.div_def, refine mul_pos _ _,
     simp [ε₀], 
     change (0 < z - θ), 
-    rw [nnreal.coe_pos, nnreal.coe_sub, sub_pos,←nnreal.coe_lt], exact H.1, exact le_of_lt H.1,
+    rw [← nnreal.coe_pos, nnreal.coe_sub, (sub_pos :(0:ℝ) < ↑z - ↑θ ↔ ↑θ < ↑z),nnreal.coe_lt_coe], exact H.1, exact le_of_lt H.1,
     change (0 < (target - θ)⁻¹),
     rwa nnreal.inv_pos, 
   },
-  have := nnreal.coe_pos.1 pos₁, replace := exists_nat_one_div_lt this,
+  have := nnreal.coe_pos.mpr pos₁, replace := exists_nat_one_div_lt this,
   choose n hyp using this, existsi n, 
   refine ⟨ _ , H.2 ⟩,
   suffices : (target - θ)/(n+1) < ε₀,
@@ -198,18 +203,17 @@ begin
   rw [add_comm, sub_add_cancel_of_le (le_of_lt H.1)],
   rw nnreal.coe_div at hyp,
   simp [-add_comm] at hyp, rw nnreal.div_def,
-  rw nnreal.coe_lt, rw nnreal.coe_mul,
-  rw lt_div_iff at hyp, rw mul_comm, simpa [-add_comm], rwa ←nnreal.coe_pos,
+  rw ← nnreal.coe_lt_coe, rw nnreal.coe_mul,
+  rw lt_div_iff at hyp, rw mul_comm, simpa [-add_comm], rwa nnreal.coe_pos,
   assume H', choose j hyp' using H', 
   refine ⟨ _ , hyp'.2 ⟩,
   replace hyp' := hyp'.1,
   suffices : 0 < (target - θ) / (↑j + 1) ,
   calc θ < θ + ((target - θ) / (↑j + 1)) : by rwa (lt_add_iff_pos_right _)
     ... ≤ z                             : hyp', 
-  rw [nnreal.coe_pos, nnreal.coe_div], refine div_pos _ _,
-  rwa [nnreal.coe_sub _ _ (le_of_lt h), sub_pos,←nnreal.coe_lt], simp, exact add_pos_of_pos_of_nonneg (zero_lt_one) (by simp)
+  rw [← nnreal.coe_pos, nnreal.coe_div], refine _root_.div_pos _ _,
+  rwa [nnreal.coe_sub (le_of_lt h), _root_.sub_pos,nnreal.coe_lt_coe], simp only [nnreal.coe_nat_cast, nnreal.coe_add, nnreal.coe_one], exact add_pos_of_nonneg_of_pos (by simp) (zero_lt_one)
 end 
-
 /-- Main theorem: given a (probability) measure μ on ℝ, 
 for every ε > 0, given a real number t such that μ(0,t] > ε 
 we exhibit a θ such that μ(0,t) > ε and μ(θ,t] ≤ ε. -/
@@ -242,7 +246,7 @@ begin
     rintros _ ⟨hx₁,hx₂⟩, exact a (le_trans hx₁ hx₂)
   },
   /- Since K is non-empty and bounded above, it's supremum is contained in it's closure. -/
-  have SupinClK : θ ∈ closure K, by exact cSup_mem_closure Kne Kbdd,
+  have SupinClK : θ ∈ closure K, by exact cSup_mem_closure (ne_empty_iff_nonempty.mp Kne) Kbdd,
   /- Since the closure K is equal to the sequential closure, θ belongs to the sequential closure of K. -/
   have : θ ∈ sequential_closure K,
   {
@@ -258,9 +262,10 @@ begin
     ext y,
     rw mem_Inter, fsplit, 
     assume h i, dsimp [Icc] at h |-, rcases h with ⟨g₁,g₂⟩, 
-    refine ⟨ _, g₂⟩, simp [θ] at g₁, rw cSup_le_iff Kbdd Kne at g₁, refine inc_seq_le_of_seq_le _ _, assume i, exact g₁ (x i) (h₁ i),
+    refine ⟨ _, g₂⟩, simp [θ] at g₁, rw cSup_le_iff Kbdd (ne_empty_iff_nonempty.mp Kne) at g₁, refine inc_seq_le_of_seq_le _ _, assume i, exact g₁ (x i) (h₁ i),
     assume h, dsimp [Icc] at h |-, 
-    refine ⟨ _ , (h 0).2⟩, refine le_of_tendsto at_top_ne_bot lim _, rw mem_at_top_sets, dsimp, existsi 0, intros b _, exact le_trans (seq_le_inc_seq x b) ((h b).left),
+    refine ⟨ _ , (h 0).2⟩, refine le_of_tendsto at_top_ne_bot lim _,
+     apply eventually_at_top.2, existsi 0, intros b _, exact le_trans (seq_le_inc_seq x b) ((h b).left), apply_instance,
   },
   /- Let s(n) denote the interval [zₙ , target]. -/
   let s := λ n, Icc (inc_seq_of x n) target,
@@ -268,7 +273,7 @@ begin
   have : tendsto (μ.to_measure ∘ s) at_top (nhds (μ.to_measure (⋂ (n : ℕ), s n))), 
   {
     refine tendsto_measure_Inter _ _ _,
-    show ∀ (n : ℕ), is_measurable (s n), from assume n, is_measurable_of_is_closed is_closed_Icc,
+    show ∀ (n : ℕ), is_measurable (s n), from assume n, is_closed_Icc.is_measurable,
     show ∀ (n m : ℕ), n ≤ m → s m ⊆ s n, from assume n m hnm, Icc_subset_Icc (inc_seq_mono _ _ hnm) (by refl),
     existsi 0, apply to_measure_lt_top,
   },
@@ -280,14 +285,16 @@ begin
     rw prob_apply, 
     rw ←ennreal.coe_le_coe, rw ennreal.coe_to_nnreal (to_measure_ne_top _ _),
     refine ge_of_tendsto (at_top_ne_bot) this _, clear this,
-    rw mem_at_top_sets, dsimp, existsi 0, intros b hb, 
+    apply eventually_at_top.2, 
+    existsi 0, intros b hb, 
     dsimp [s], 
     have := inc_seq_of_exists_index x b,
     choose k₀ hk₀ using this, rw hk₀,
     replace h₁ := h₁ k₀,  
     rw ← coe_eq_to_measure, 
     rw ennreal.coe_le_coe, assumption,
-    exact is_measurable_of_is_closed is_closed_Icc,
+    apply_instance,
+    exact is_closed_Icc.is_measurable,
   }, 
   /- The remaining proof proceeds by casing on target ≤ θ.-/
   by_cases (target ≤ θ),
@@ -305,14 +312,14 @@ begin
     suffices : 0 < target - θ,
     norm_num, rw nnreal.div_def, refine mul_pos this _, 
     apply nnreal.inv_pos.2, rw zero_lt_iff_ne_zero, simp,
-    rw nnreal.coe_pos, rw nnreal.coe_sub, 
-    rw sub_pos, rwa ←nnreal.coe_lt, exact le_of_lt h,
+    rw ←nnreal.coe_pos, rw nnreal.coe_sub, 
+    rw _root_.sub_pos, rwa nnreal.coe_lt_coe, exact le_of_lt h,
     dsimp [y],
     calc (θ + (target - θ) / (n + 1)) 
     = θ + (target - θ)*(n+1)⁻¹ :by rw ←nnreal.div_def
-    ... ≤ θ + ((target - θ)*1) : by simp; exact mul_le_of_le_one_right (le_of_lt (by rwa [nnreal.coe_pos, nnreal.coe_sub, sub_pos,←nnreal.coe_lt];exact le_of_lt h)) (by rw [nnreal.inv_le,mul_one];repeat{simp})
+    ... ≤ θ + ((target - θ)*1) : by simp; exact mul_le_of_le_one_right (le_of_lt (by rwa [← nnreal.coe_pos, nnreal.coe_sub, _root_.sub_pos,nnreal.coe_lt_coe];exact le_of_lt h)) (by rw [nnreal.inv_le,mul_one];repeat{simp})
     ... = θ + (target - θ)   : by rw mul_one
-    ... = θ + target - θ : by rw [←nnreal.eq_iff,nnreal.coe_add, (nnreal.coe_sub _ _ (le_of_lt h))]; simp
+    ... = θ + target - θ : by rw [←nnreal.eq_iff,nnreal.coe_add, (nnreal.coe_sub (le_of_lt h))]; simp
     ... = target     : by rw nnreal.add_sub_cancel',
   },
   /- Prove that ∀ n, μ[yₙ, target] < ε. -/
@@ -332,26 +339,27 @@ begin
   have : tendsto (μ.to_measure ∘ s') at_top (nhds (μ.to_measure (⋃ (n : ℕ), s' n))), 
   { 
     refine tendsto_measure_Union _ _,
-    assume n, exact is_measurable_of_is_closed is_closed_Icc,
+    assume n, exact is_closed_Icc.is_measurable,
     unfold monotone, dsimp [s'],
     assume a b hab, refine Icc_subset_Icc _ (by refl),
     dsimp [y], rw add_le_add_iff_left,
     rw nnreal.div_def, rw nnreal.div_def, 
-    refine mul_le_mul_of_nonneg_left _ (le_of_lt (by rwa [nnreal.coe_pos,nnreal.coe_sub _ _ (le_of_lt h), sub_pos,←nnreal.coe_lt])),
-    rw nnreal.coe_le, simp, rw inv_le_inv _ _, simpa,
-    repeat{exact add_pos_of_pos_of_nonneg (zero_lt_one) (by simp)},
+    refine mul_le_mul_of_nonneg_left _ (le_of_lt (by rwa [← nnreal.coe_pos,nnreal.coe_sub (le_of_lt h), _root_.sub_pos,nnreal.coe_lt_coe])),
+    rw ← nnreal.coe_le_coe, simp, rw inv_le_inv _ _, simpa,
+    repeat{exact add_pos_of_nonneg_of_pos (by simp) (zero_lt_one)},
   },
   /- Show the remaining conclusion. -/
   have part₂ : μ (Ioc θ target) ≤ ε,
   {
     rw ←hB₂ at this, rw [prob_apply, ←ennreal.coe_le_coe, ennreal.coe_to_nnreal (to_measure_ne_top _ _)],
     refine le_of_tendsto (at_top_ne_bot) this _, clear this,
-    rw mem_at_top_sets, existsi 0, intros b hb, 
+    apply eventually_at_top.2,  existsi 0, intros b hb, 
     dsimp [s'], 
     refine le_of_lt _ ,  
     rw ← coe_eq_to_measure, 
     rw ennreal.coe_lt_coe, exact (ha b),
-    exact (is_measurable_of_is_open (is_open_lt continuous_const continuous_id)).inter (is_measurable_of_is_closed (is_closed_le continuous_id continuous_const)),
+    apply_instance,
+    exact ((is_open_lt continuous_const continuous_id).is_measurable).inter ((is_closed_le continuous_id continuous_const).is_measurable),
   }, 
   exact ⟨part₁,part₂⟩,
 end

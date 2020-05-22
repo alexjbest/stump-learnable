@@ -2,7 +2,7 @@
 Copyright © 2019, Oracle and/or its affiliates. All rights reserved.
 -/
 
-import analysis.complex.exponential
+import analysis.special_functions.exp_log
 import ..lib.util
 
 open real
@@ -17,7 +17,7 @@ lemma complexity_enough:
 begin
     unfold complexity, 
     intros, 
-    have h0: ((1: nnreal) - ε) > 0, by change (0 < 1 - ε);rwa[nnreal.coe_pos, nnreal.coe_sub _ _ (le_of_lt (a_1)), sub_pos,←nnreal.coe_lt],
+    have h0: ((1: nnreal) - ε) > 0, by change (0 < 1 - ε);rwa[← nnreal.coe_pos, nnreal.coe_sub (le_of_lt (a_1)), sub_pos, nnreal.coe_lt_coe],
     rw log_le_log_nnreal,
     {
         have h2:= log_pow_nnreal (1 - ε) h0 (n+1),
@@ -28,13 +28,13 @@ begin
         {
             rw ←exp_lt_exp, simp, rw exp_log _, 
             {
-                rw sub_nnreal,
+                rw nnreal.coe_sub,
                 cases ε, 
                 exact sub_lt_self 1 a,
                 apply le_of_lt, assumption,
             },
             {
-                rw sub_nnreal,
+                rw nnreal.coe_sub,
                 cases ε, 
                 exact sub_pos.mpr a_1,
                 apply le_of_lt, assumption,
@@ -45,10 +45,9 @@ begin
             clear h2,
             have nat_cast_1: ∀ x: ℕ, (nat.cast x) + (1:ℝ) = nat.cast(x + 1), exact nat.cast_succ,
             rw ← nat_cast_1,
-            have minus_nnreal: ∀ x: nnreal, x < 1 → (1 - x).val = 1 - x.val, assume x h, exact nnreal.coe_sub _ _ (le_of_lt h),
+            have minus_nnreal: ∀ x: nnreal, x < 1 → (1 - x).val = 1 - x.val, assume x h, exact nnreal.coe_sub (le_of_lt h),
             rw minus_nnreal, 
             swap, assumption,
-            rw gt_from_lt at a_4,
             have plus_1:= add_lt_add_right a_4 1, 
             simp at plus_1,
             simp,
@@ -62,7 +61,7 @@ begin
             conv {
                 to_rhs, rw silly, skip,
             },
-            assumption,
+            exact sub_lt_iff_lt_add'.mp a_4,
         },
     },
     {

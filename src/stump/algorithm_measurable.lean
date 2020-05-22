@@ -34,7 +34,7 @@ begin
         apply continuous_if; intros,
         {
             unfold rlt at H, simp at H,
-            have FOO := @frontier_lt_subset_eq nnreal (vec nnreal (nat.succ n_n)) _ _ _ _ (λ x, max n_n x.snd) (λ x, x.fst) _ (continuous_fst),
+            have FOO := @frontier_lt_subset_eq nnreal (vec nnreal (nat.succ n_n)) _ _ _ (λ x, max n_n x.snd) (λ x, x.fst) _ _ (continuous_fst),
             {
                 simp at FOO,
                 have BAR := mem_of_mem_of_subset H FOO, clear FOO,
@@ -92,11 +92,11 @@ begin
         unfold max,
         apply measurable.if,
         unfold_coes, apply max_is_measurable,
-        apply measurable_fst,
+        apply measurable.fst,
         apply measurable_id,
         apply measurable.comp,
         apply n_ih,
-        apply measurable_snd,
+        apply measurable.snd,
         apply measurable_id,
     }
 end
@@ -120,14 +120,14 @@ begin
             finish,
         },
         rw PROD,
-        apply is_measurable_set_prod,
+        apply is_measurable.prod,
         {
             rw ← univ_def,
             exact is_measurable.univ,
         },
         fsplit,
     },
-    apply measurable_fst,
+    apply measurable.fst,
     apply measurable_id,
     apply measurable_const,
 

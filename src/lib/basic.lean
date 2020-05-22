@@ -129,7 +129,7 @@ end
   },
   rw h₂,
   rw vec.prob_measure_apply _ _,
-  rw [vec.prod_measure_eq], rw vec.prod_measure_apply _ _ hP, rw pow_succ', rw ←ih, rw mul_comm, rw vec.prob_measure_apply, exact hp' k, exact hp' k, exact is_measurable_set_prod hP (hp' k),
+  rw [vec.prod_measure_eq], rw vec.prod_measure_apply _ _ hP, rw pow_succ', rw ←ih, rw mul_comm, rw vec.prob_measure_apply, exact hp' k, exact hp' k, exact is_measurable.prod hP (hp' k),
 end
 
 noncomputable def point_indicators {f h: α → bool} {n : ℕ} (hf : measurable f) (hh : measurable h) (i : dfin (succ n)) := χ ⟦{x : vec α n | h(kth_projn x i) ≠ f (kth_projn x i)}⟧ 
@@ -162,7 +162,7 @@ begin
     refine measurable.comp _ measurable_id, 
     refine finset.induction_on s _ _, 
       {simp, exact simple_func.measurable 0,},
-      {intros a b c d, simp [c], apply measure_theory.measurable_add, exact simple_func.measurable _, exact d,}
+      {intros a b c d, simp [c], apply measurable.add, exact simple_func.measurable _, exact d,}
   },
 end
 
@@ -184,6 +184,7 @@ begin
   simp [c], rw add_monoid.add_smul, rw [add_monoid.smul],  
   simp [monoid.pow], rw right_distrib, rw monoid.one_mul, rw ←d, 
   simp, 
+  refl,
 end
 
 namespace hoeffding
@@ -199,7 +200,7 @@ lemma integral_char_rect [measurable_space α] [measurable_space β] [n₁ : non
 (∫ χ ⟦ A.prod B ⟧ 𝒹(μ ⊗ₚ ν)) = (μ A) * (ν B) := 
 begin
   haveI := (nonempty_prod.2 (and.intro n₁ n₂)),
-  rw [integral_char_fun _ (is_measurable_set_prod hA hB),←coe_eq_to_measure, 
+  rw [integral_char_fun _ (is_measurable.prod hA hB),←coe_eq_to_measure, 
   (prod.prob_measure_apply _ _ hA hB)], simp, 
 end
 

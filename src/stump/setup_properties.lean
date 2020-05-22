@@ -74,7 +74,7 @@ begin
 end
 
 lemma error_interval_2:
-    ∀ h, h > target → error μ target h = μ (Ioc target h) :=
+    ∀ h, target < h → error μ target h = μ (Ioc target h) :=
 begin
     intros,
     unfold error,

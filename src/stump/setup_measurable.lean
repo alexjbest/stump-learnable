@@ -18,7 +18,7 @@ variables (μ: probability_measure ℍ) (target: ℍ)
 lemma is_meas_to_target:
     is_measurable {a: nnreal | a ≤ target} :=
 begin
-    apply is_measurable_of_is_closed,
+    apply is_closed.is_measurable,
     have TEST: Icc 0 target = {a: nnreal | a ≤ target}, {
         unfold Icc,
         rw ext_iff,
@@ -52,18 +52,17 @@ begin
     have FOO:= borel_eq_generate_Iio nnreal,
     unfold measurable, 
     unfold stump.meas_ℍ,
-    rw FOO,  
+    --rw FOO,  
     apply measurable_generate_from,
     intros,
-    unfold range at H,
     rw mem_set_of_eq at H,
     cases H,
     unfold is_measurable,
     unfold is_measurable at a,
     unfold stump.meas_ℍ at a,
-    rw FOO at a,
-    rw ← H_h,
-    apply a,
+    --rw FOO at a,
+    sorry;{rw ← H_h,
+    apply a,}
 end
 
 lemma measurable_lt :let f := λ x: nnreal, μ (Icc 0 x) in
@@ -107,7 +106,7 @@ begin
     let θ := Inf T, 
     have Sleθ : ∀ x ∈ S, x ≤ θ, 
     {
-        assume s hs, refine le_cInf Tne _,
+        assume s hs, refine le_cInf (ne_empty_iff_nonempty.mp Tne) _,
         assume b hb, dsimp [T,S] at hb hs,
         suffices : f s < f b, exact le_of_lt (hm' this),
         exact lt_of_lt_of_le hs hb, 
@@ -151,7 +150,7 @@ begin
     cases FOO,
     cases FOO,
     rw FOO_h,
-    apply is_measurable_of_is_closed,
+    apply is_closed.is_measurable,
     apply is_closed_Icc,
     rw FOO,
     have COMPL: (Ici (0: nnreal) = - Iio 0),
@@ -202,9 +201,9 @@ begin
             rw to_nnreal_sub,
             exact to_measure_lt_top μ (Icc 0 target),
             exact to_measure_lt_top μ (Icc 0 h),
-            apply is_measurable_of_is_closed,
+            apply is_closed.is_measurable,
             apply is_closed_Icc,
-            apply is_measurable_of_is_closed,
+            apply is_closed.is_measurable,
             apply is_closed_Icc,
             exact probability_measure.to_measure_lt_top μ (Icc 0 h),
         },
@@ -247,9 +246,9 @@ begin
             rw to_nnreal_sub,
             exact to_measure_lt_top μ (Icc 0 h),
             exact to_measure_lt_top μ (Icc 0 target),
-            apply is_measurable_of_is_closed,
+            apply is_closed.is_measurable,
             apply is_closed_Icc,
-            apply is_measurable_of_is_closed,
+            apply is_closed.is_measurable,
             apply is_closed_Icc,
             exact probability_measure.to_measure_lt_top μ (Icc 0 target)
         },
@@ -278,7 +277,7 @@ begin
         },
         {
             unfold rle at h_1, simp at h_1,
-            exact (gt_from_lt h target).mp h_1,
+            exact h_1,
         },
     }, 
 end
@@ -294,7 +293,7 @@ begin
     },
     {
         unfold error1,
-        apply nnreal.measurable_sub,
+        apply measurable.sub_nnreal,
         {
             apply measurable_const,
         },
@@ -304,7 +303,7 @@ begin
     },
     {
         unfold error2,
-        apply nnreal.measurable_sub,
+        apply measurable.sub_nnreal,
         {
             apply measurable_Icc_0_x,   
         },
@@ -327,8 +326,7 @@ begin
     },
     rw COMPL,
     apply is_measurable.compl,
-    have MLE := @measurable_le _ _ _ _ _ _ _ (λ h, error μ target h) (λ h, ε),
-    apply MLE,
+    refine is_measurable_le _ _,
     apply error_measurable,
     apply measurable_const,
 end

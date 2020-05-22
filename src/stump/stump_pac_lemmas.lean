@@ -73,7 +73,7 @@ begin
         assumption,
     },
     {
-        apply is_measurable_of_is_closed,
+        apply is_closed.is_measurable,
         apply is_closed_Icc,
     },
     assumption,

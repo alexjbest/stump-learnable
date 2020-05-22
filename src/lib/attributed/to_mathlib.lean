@@ -8,7 +8,7 @@ Authors: Johannes Holzl, John Tristan, Koundinya Vajjha
 import tactic.tidy 
 import measure_theory.giry_monad measure_theory.integration measure_theory.borel_space .dvector
 import .probability_theory 
-import analysis.complex.exponential 
+import analysis.special_functions.exp_log
 
 local attribute [instance] classical.prop_decidable
 
@@ -97,7 +97,7 @@ begin
   { simp, erw lintegral_zero },
   { assume a s has ih, simp [has], erw [lintegral_add],
     rw simple_func.lintegral_eq_integral,unfold char_fun,
-    erw simple_func.restrict_const_integral, dsimp, rw ih, ext1,cases a_1, dsimp at *, simp at *, refl, exact(hX a), 
+    erw simple_func.restrict_const_integral, dsimp, erw ih, ext1,cases a_1, dsimp at *, simp at *, refl, exact(hX a), 
     { intros i h, dsimp at *, solve_by_elim [hX] },
     { intros a b, dsimp at *, solve_by_elim },
   },
@@ -106,7 +106,7 @@ end
 lemma integral_le_integral [measurable_space α] (m : measure α) (f g : α → ennreal) (h : f ≤ g) : 
 (∫ f ðm) ≤ (∫ g ðm) :=
 begin
-rw integral, rw integral, apply lintegral_le_lintegral, assumption,
+rw integral, rw integral, apply lintegral_mono, assumption,
 end
 
 
@@ -114,7 +114,7 @@ noncomputable def char_prod [measurable_space α]{f : α → ennreal}{ε : ennre
 ⟨
   λ x, if (f(x) ≥ ε) then ε else 0,
   assume x, by letI : measurable_space ennreal := borel ennreal; exact
-   measurable.if (measurable_le measurable_const hf) measurable_const measurable_const _ (is_measurable_of_is_closed is_closed_singleton),
+   measurable.if (is_measurable_le measurable_const hf) measurable_const measurable_const _ (is_closed_singleton.is_measurable),
   begin apply finite_subset (finite_union (finite_singleton ε) ((finite_singleton 0))),
   rintro _ ⟨a, rfl⟩,
   by_cases (f a ≥ ε); simp [h],
@@ -143,10 +143,10 @@ begin
     dunfold char_fun, 
     rw [simple_func.restrict_apply, simple_func.const_apply],
     split_ifs, rw mul_one, rw mul_zero,
-    apply (@measurable_le ennreal α _ _), exact measurable_const, assumption,
+    apply (@is_measurable_le ennreal α _ _), exact measurable_const, assumption,
   },
   rw seq, simp, rw [integral_const_mul m, integral_char_fun], 
-  apply (@measurable_le ennreal α _ _), exact measurable_const, assumption, 
+  apply (@is_measurable_le ennreal α _ _), exact measurable_const, assumption, 
   apply simple_func.measurable,
 end
 
@@ -163,13 +163,13 @@ begin
     split_ifs,  
     rw [mul_one], apply (@nondec _ _ h),  
     finish,
-    apply (@measurable_le ennreal α _ _), exact measurable_const, assumption,
+    apply (@is_measurable_le ennreal α _ _), exact measurable_const, assumption,
   },
   rw [←integral_char_fun, ←integral_const_mul m],
   apply (integral_le_integral m), 
   exact hsf, 
   apply simple_func.measurable,
-  apply (@measurable_le ennreal α _ _), exact measurable_const, assumption,
+  apply (@is_measurable_le ennreal α _ _), exact measurable_const, assumption,
 end
 
 
@@ -272,7 +272,7 @@ end
 lemma inl_measurable_dirac [measurable_space α][measurable_space β]  : ∀ y : β,  measurable (λ (x : α), ret (x, y)) := assume y, begin
   apply measurable_of_measurable_coe, 
   intros s hs,
-  simp [hs, lattice.supr_eq_if, mem_prod_eq], 
+  simp [hs, supr_eq_if, mem_prod_eq], 
   apply measurable_const.if _ measurable_const,
   apply measurable.preimage _ hs,  
   apply measurable.prod, dsimp, exact measurable_id, 
@@ -282,7 +282,7 @@ end
 lemma inr_measurable_dirac [measurable_space β][measurable_space α] : ∀ x : α,  measurable (λ (y : β), ret (x, y)) := assume x, begin
   apply measurable_of_measurable_coe, 
   intros s hs,
-  simp [hs, lattice.supr_eq_if, mem_prod_eq], 
+  simp [hs, supr_eq_if, mem_prod_eq], 
   apply measurable_const.if _ measurable_const, apply measurable.preimage _ hs,  
   apply measurable.prod, dsimp, exact measurable_const, 
   dsimp, exact measurable_id, 
@@ -309,7 +309,7 @@ lemma fst_comp_measurable [measurable_space α] [measurable_space β] [measurabl
 lemma measurable_pair_iff [measurable_space α] [measurable_space β] [measurable_space γ] (f : γ → α × β) :
 measurable f ↔ (measurable (prod.fst ∘ f) ∧ measurable (prod.snd ∘ f)) :=
 iff.intro 
-(assume h, and.intro (measurable_fst h) (measurable_snd h)) 
+(assume h, and.intro (measurable.fst h) (measurable.snd h)) 
 (assume ⟨h₁, h₂⟩, measurable.prod h₁ h₂)
 
 
@@ -321,7 +321,7 @@ begin
   by_cases Ha: (a ∈ A); by_cases Hb: (b ∈ B), 
   repeat {simp [Ha, Hb]},
   repeat {assumption}, 
-  exact is_measurable_set_prod hA hB, 
+  exact is_measurable.prod hA hB, 
 end
 
 lemma prod.bind_ret_comp [measurable_space α] [measurable_space β]
@@ -346,13 +346,13 @@ split,
   {
     apply not_lt_of_le,
     apply measurable_space.generate_from_le, 
-    intros t ht, dsimp at ht, rcases ht with ⟨A, B, rfl, hA, hB⟩, exact is_measurable_set_prod hA hB,
+    intros t ht, dsimp at ht, rcases ht with ⟨A, B, rfl, hA, hB⟩, exact is_measurable.prod hA hB,
   }
 end
 
 def measurable_prod_bind_ret [measurable_space α] [measurable_space β] (ν : probability_measure β): set(α × β) → Prop := λ s, measurable (λ (x : α), (doₚ (y : β) ←ₚ ν ; retₚ (x, y)) s)
 
-lemma measure_rect_inter [measurable_space α] [measurable_space β] : ∀t₁ t₂, t₁ ∈ {E | ∃ (A : set α) (B : set β), E = A.prod B ∧ is_measurable A ∧ is_measurable B} → t₂ ∈ {E | ∃ (A : set α) (B : set β), E = A.prod B ∧ is_measurable A ∧ is_measurable B} → t₁ ∩ t₂ ≠ ∅ → t₁ ∩ t₂ ∈ {E | ∃ (A : set α) (B : set β), E = A.prod B ∧ is_measurable A ∧ is_measurable B} := 
+lemma measure_rect_inter [measurable_space α] [measurable_space β] : ∀t₁ t₂, t₁ ∈ {E | ∃ (A : set α) (B : set β), E = A.prod B ∧ is_measurable A ∧ is_measurable B} → t₂ ∈ {E | ∃ (A : set α) (B : set β), E = A.prod B ∧ is_measurable A ∧ is_measurable B} → (t₁ ∩ t₂).nonempty → t₁ ∩ t₂ ∈ {E | ∃ (A : set α) (B : set β), E = A.prod B ∧ is_measurable A ∧ is_measurable B} := 
 begin
   rintros t₁ t₂ ⟨A, B, rfl, hA, hB⟩ ⟨A', B', rfl, hA', hB'⟩ hI,
   rw prod_inter_prod,
@@ -370,16 +370,18 @@ begin
   rw compl_eq_univ_diff,
   conv{congr, funext, rw [probability_measure.prob_diff _ (subset_univ _) is_measurable.univ ht]}, simp, 
   refine measurable.comp _ hA,
-  refine measurable.comp _ (measurable_sub measurable_const _),
-  exact measurable_of_real,
-  exact measurable_of_continuous nnreal.continuous_coe,
+  refine measurable.comp _ (measurable.sub measurable_const _),
+  exact nnreal.continuous_of_real.measurable,
+  exact nnreal.continuous_coe.measurable,
 end
 
+instance : topological_monoid ennreal :=
+{ continuous_mul := sorry }
 
 lemma measurable_prod_bind_ret_basic [measurable_space α] [measurable_space β] (ν : probability_measure β) : ∀ (t : set (α × β)),t ∈ {E : set (α × β) | ∃ (A : set α) (B : set β), E = set.prod A B ∧ is_measurable A ∧ is_measurable B} → measurable (λ (x : α), (doₚ (y : β) ←ₚ ν ; retₚ (x, y)) t) := 
 begin
   rintros t ⟨A, B, rfl, hA, hB⟩,
-  conv{congr,funext,rw [_root_.bind_apply (is_measurable_set_prod hA hB)  (prob_inr_measurable_dirac x)],},
+  conv{congr,funext,rw [_root_.bind_apply (is_measurable.prod hA hB)  (prob_inr_measurable_dirac x)],},
   refine measurable.comp _ _, exact measurable_to_nnreal,
   dsimp,
   conv{congr,funext,simp [coe_eq_to_measure]},
@@ -388,7 +390,8 @@ begin
     conv{congr,funext,rw ret_to_measure,}, exact measurable_dirac_fun hB,
   },
   conv {congr, funext, rw [integral_const_mul ν.to_measure h],},
-  refine measurable_mul _ _, conv{congr,funext, rw [ret_to_measure],},exact measurable_dirac_fun hA,
+  haveI : topological_monoid ennreal := by apply_instance,
+  refine measurable.mul _ _, conv{congr,funext, rw [ret_to_measure],},exact measurable_dirac_fun hA,
   exact measurable_const, 
 end
 
@@ -398,8 +401,8 @@ begin
   unfold_coes,
   refine measurable.comp (measurable_of_measurable_nnreal measurable_id) _,
   conv{congr,funext,rw [m_Union _ hA hI,ennreal.tsum_eq_supr_nat]},
-  apply measurable.supr, intro i, 
-  apply measurable_finset_sum,
+  apply measurable_supr, intro i, 
+  apply finset.measurable_sum,
   intros i, 
   have h := hB i, clear hB, 
   refine measurable_of_ne_top _ _ _, assume x, 
@@ -421,8 +424,8 @@ end
 (μ ⊗ₚ ν) (A.prod B) = μ (A) * ν (B) := 
 begin
   dunfold prod.prob_measure,
-  rw _root_.bind_apply (is_measurable_set_prod hA hB),
-  conv_lhs{congr, congr, skip, funext, erw [_root_.bind_apply ( is_measurable_set_prod hA hB) (prob_inr_measurable_dirac a)]},
+  rw _root_.bind_apply (is_measurable.prod hA hB),
+  conv_lhs{congr, congr, skip, funext, erw [_root_.bind_apply ( is_measurable.prod hA hB) (prob_inr_measurable_dirac a)]},
   simp[coe_eq_to_measure, prob.dirac_apply' hA hB],
     -- move this to probability_theory 
   have h : measurable (λ (x : β), ((retₚ x).to_measure : measure β) B),
@@ -437,7 +440,7 @@ begin
     {
       assume a, rw dirac_apply _ hA, by_cases(a ∈ A),
       simp[h],exact lt_top_iff_ne_top.2 one_ne_top, 
-      simp[h], exact lt_top_iff_ne_top.2 zero_ne_top,
+      simp[h],
     },
   conv_lhs{congr, congr, skip, funext, rw [coe_to_nnreal (lt_top_iff_ne_top.1 (mul_lt_top (to_measure_lt_top _ _) (g a)))]},
   conv_lhs{congr, rw [integral_const_mul μ.to_measure (measurable_dirac_fun hA)]},
@@ -473,7 +476,7 @@ lemma integral_char_rect [measurable_space α] [measurable_space β] [n₁ : non
 (∫ χ ⟦ A.prod B ⟧ 𝒹(μ ⊗ₚ ν)) = (μ A) * (ν B) := 
 begin
   haveI := (nonempty_prod.2 (and.intro n₁ n₂)),
-  rw [integral_char_fun _ (is_measurable_set_prod hA hB),←coe_eq_to_measure, 
+  rw [integral_char_fun _ (is_measurable.prod hA hB),←coe_eq_to_measure, 
   (prod.prob_measure_apply _ _ hA hB)], simp, 
 end
 
@@ -517,8 +520,8 @@ begin
   dsimp,  
   conv{congr,funext,rw ennreal.tsum_eq_supr_nat,},
   refine measurable.comp measurable_to_nnreal _,
-  apply measurable.supr, intro i, 
-  apply measurable_finset_sum, assume i, 
+  apply measurable_supr, intro i, 
+  apply finset.measurable_sum, assume i, 
   refine measurable_of_ne_top _ _ _, assume a,
   refine probability_measure.to_measure_ne_top _ _, solve_by_elim,
 end
@@ -530,9 +533,9 @@ begin
   rw compl_eq_univ_diff,
   conv{congr, funext, rw [probability_measure.prob_diff _ (subset_univ _) is_measurable.univ ht]}, simp, 
   refine measurable.comp _ hA,
-  refine measurable.comp _ (measurable_sub measurable_const _),
-  exact measurable_of_real,
-  exact measurable_of_continuous nnreal.continuous_coe,
+  refine measurable.comp _ (measurable.sub measurable_const _),
+  exact nnreal.continuous_of_real.measurable,
+  exact nnreal.continuous_coe.measurable,
 end
 
 -- Move back to Giry monad 
@@ -544,7 +547,7 @@ lemma measurable_rect_basic {γ : Type u} [measurable_space α] [measurable_spac
 begin
   rintros t ⟨A, B, rfl, hA, hB⟩,
   simp [prod.prob_measure_apply _ _ hA hB],
-  exact measure_theory.measurable_mul (prob.measurable_measure_kernel hf hA) (prob.measurable_measure_kernel hg hB), 
+  exact measurable.mul (prob.measurable_measure_kernel hf hA) (prob.measurable_measure_kernel hg hB), 
 end
 
 theorem measurable_pair_measure {γ : Type u} [measurable_space α] [measurable_space β] [measurable_space γ] [nonempty β] [nonempty γ]{f : α → probability_measure β} {g : α → probability_measure γ} (hf : measurable f) (hg : measurable g) : measurable (λ x : α , f x ⊗ₚ g x) := 
@@ -675,13 +678,13 @@ begin
         {
             apply measurable.comp,
             assumption,
-            apply measurable_fst,
+            apply measurable.fst,
             apply measurable_id,
         },
         {
             apply measurable.comp,
             assumption,
-            apply measurable_snd,
+            apply measurable.snd,
             apply measurable_id,
         }
     },
@@ -735,12 +738,12 @@ instance : conditionally_complete_linear_order nnreal :=
   Inf     := Inf,
   le_cSup := assume s a x has, le_cSup x has,
   cSup_le := assume s a hs h,show Sup ((coe : nnreal → ℝ) '' s) ≤ a, from
-    cSup_le (by simp [hs]) $ assume r ⟨b, hb, eq⟩, eq ▸ h _ hb,
+    cSup_le (by simp [hs]) $ assume r ⟨b, hb, eq⟩, eq ▸ h hb,
   cInf_le := assume s a x has, cInf_le x has,
   le_cInf := assume s a hs h, show (↑a : ℝ) ≤ Inf ((coe : nnreal → ℝ) '' s), from
-    le_cInf (by simp [hs]) $ assume r ⟨b, hb, eq⟩, eq ▸ h _ hb,
+    le_cInf (by simp [hs]) $ assume r ⟨b, hb, eq⟩, eq ▸ h hb,
  decidable_le := begin assume x y, apply classical.dec end,
  .. nnreal.linear_ordered_semiring, 
- .. lattice.lattice_of_decidable_linear_order,
- .. nnreal.lattice.order_bot
+ .. lattice_of_decidable_linear_order,
+ .. nnreal.order_bot
 }

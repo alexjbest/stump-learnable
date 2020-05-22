@@ -85,6 +85,7 @@ begin
             refine probability_measure.prob_trivial _ _ AS,
         },
         rw DC; try {assumption},
+        rw ← nnreal.sub_le_iff_le_add,
         apply super_dumb, assumption, 
     },
 end
