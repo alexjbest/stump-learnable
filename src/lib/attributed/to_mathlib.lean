@@ -375,9 +375,6 @@ begin
   exact nnreal.continuous_coe.measurable,
 end
 
-instance : topological_monoid ennreal :=
-{ continuous_mul := sorry }
-
 lemma measurable_prod_bind_ret_basic [measurable_space α] [measurable_space β] (ν : probability_measure β) : ∀ (t : set (α × β)),t ∈ {E : set (α × β) | ∃ (A : set α) (B : set β), E = set.prod A B ∧ is_measurable A ∧ is_measurable B} → measurable (λ (x : α), (doₚ (y : β) ←ₚ ν ; retₚ (x, y)) t) := 
 begin
   rintros t ⟨A, B, rfl, hA, hB⟩,
@@ -390,9 +387,9 @@ begin
     conv{congr,funext,rw ret_to_measure,}, exact measurable_dirac_fun hB,
   },
   conv {congr, funext, rw [integral_const_mul ν.to_measure h],},
-  haveI : topological_monoid ennreal := by apply_instance,
-  refine measurable.mul _ _, conv{congr,funext, rw [ret_to_measure],},exact measurable_dirac_fun hA,
-  exact measurable_const, 
+  refine measurable.ennreal_mul _ _,
+  exact measurable_dirac_fun hA,
+  exact measurable_const,
 end
 
 lemma measurable_prod_bind_ret_union [measurable_space α] [measurable_space β] (ν : probability_measure β): ∀h:ℕ → set (α × β), (∀i j, i ≠ j → h i ∩ h j ⊆ ∅) → (∀i, is_measurable (h i)) → (∀i, measurable(λ (x : α), (doₚ (y : β) ←ₚ ν ; retₚ (x, y)) (h i))) → measurable (λ (x : α), (doₚ (y : β) ←ₚ ν ; retₚ (x, y)) (⋃i, h i)) := 
